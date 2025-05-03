@@ -1,0 +1,30 @@
+package repository
+
+const (
+	registrateUserQuery                  = "insert into users (name, tg_id) values ($1, $2) returning id"
+	getUserIDByTelegramIDQuery           = "select id from users where tg_id = $1"
+	createGroupQuery                     = "insert into groups (name, admin) values ($1, $2) returning id"
+	addUserIntoGroupQuery                = "insert into group_user (group_id, user_id, access_type_id) values ($1, $2, 0) returning id"
+	changeRightsPolicyQuery              = "update group_user set access_type_id = $3 where group_id = $1 and user_id = $2"
+	addPaperQuery                        = "insert into papers (name, author_id) values ($1, $2) returning id"
+	addPaperIntoGroupQuery               = "insert into paper_group(paper_id, group_id) values ($1, $2) returning id"
+	deletePapersFromPaperGroupQuery      = "delete from paper_group where paper_id in ($1)"
+	deletePapersFromPapersQuery          = "delete from papers where id in ($1)"
+	deleteGroupsFromGroupUserQuery       = "delete from group_user where group_id in ($1)"
+	deleteGroupsFromPaperGroupQuery      = "delete from paper_group where group_id in ($1)"
+	deleteGroupsFromGroupsQuery          = "delete from groups where id in ($1)"
+	deleteUserFromGroupQuery             = "delete from group_user where group_id = $1 and user_id = $2"
+	deletePaperFromGroupQuery            = "delete from paper_group where paper_id = $1 and group_id = $2"
+	getUserGroupsQuery                   = "select group_id from group_user where user_id = $1"
+	getGroupsInfoQuery                   = "select id, name, admin from groups where id in ($1)"
+	getPapersInfoQuery                   = "select id, name, author_id from papers where id in ($1)"
+	getUsersInfoQuery                    = "select id, name, tg_id from users where id in ($1)"
+	getUserPapersQuery                   = "select id, name from papers where author_id = $1"
+	getGroupPapersQuery                  = "select paper_id from paper_group where group_id = $1"
+	getUserGroupsOwnershipQuery          = "select id, name from groups where admin = $1"
+	getGroupUsersQuery                   = "select user_id, access_type from group_user where group_id = $1"
+	getUserByShortnameQuery              = "select id, name, tg_id from users where name = $1"
+	changeGroupNameQuery                 = "update groups set name = $2 where id = $1"
+	getUserIDsWithAccessTypeInGroupQuery = "select user_id from group_user where group_id = $1 access_type_id = $2"
+	upsertMessage                        = `insert into messages (chat_id, user_id, message_id) VALUES ($1, $2, $3) on conflict (chat_id) do update set chat_id = $1, user_id = $2, message_id = $3`
+)
