@@ -25,8 +25,13 @@ func (u *useCase) ChangeGroupName(ctx context.Context, groupID int64, name strin
 	return nil
 }
 
-func (u *useCase) AddUserIntoGroup(ctx context.Context, groupID int64, tgID int64) error {
-	if err := u.repository.AddUserIntoGroup(ctx, groupID, tgID); err != nil {
+func (u *useCase) AddUserIntoGroup(ctx context.Context, groupID int64, name string) error {
+	user, err := u.repository.GetUserByShortname(ctx, name)
+	if err != nil {
+		return fmt.Errorf("failed to get user by shortname: %w", err)
+	}
+
+	if err := u.repository.AddUserIntoGroup(ctx, groupID, user.TelegramID); err != nil {
 		return fmt.Errorf("failed to add user into group: %w", err)
 	}
 
@@ -71,4 +76,36 @@ func (u *useCase) DeleteUserFromGroup(ctx context.Context, groupID int64, tgID i
 	}
 
 	return nil
+}
+
+func (u *useCase) SetReadOnlyRightsForUserInGroup(ctx context.Context, groupID int64, tgID int64) error {
+	if err := u.repository.SetReadOnlyRightsForUserInGroup(ctx, groupID, tgID); err != nil {
+		return fmt.Errorf("failed to set read only rights for user in group: %w", err)
+	}
+	return nil
+}
+
+func (u *useCase) SetReadWriteRightsForUserInGroup(ctx context.Context, groupID int64, tgID int64) error {
+	if err := u.repository.SetReadWriteRightsForUserInGroup(ctx, groupID, tgID); err != nil {
+		return fmt.Errorf("failed to set read write rights for user in group: %w", err)
+	}
+	return nil
+}
+
+func (u *useCase) GetGroupUsersToDelete(ctx context.Context, groupID int64) ([]model.User, error) {
+	users, err := u.repository.GetGroupUsers(ctx, groupID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get group users: %w", err)
+	}
+
+	result := make([]model.User, 0, len(users))
+
+	for _, user := range users {
+		result = append(result, model.User{
+			ID:        user.ID,
+			Shortname: user.Shortname,
+		})
+	}
+
+	return result, nil
 }

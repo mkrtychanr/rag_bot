@@ -16,4 +16,8 @@ var (
 	PickGroupScreen               ScreenType = ScreenType(10)
 	GroupDocumentsScreen          ScreenType = ScreenType(11)
 	GroupUsersScreen              ScreenType = ScreenType(12)
+	CreateGroupScreen             ScreenType = ScreenType(13)
+	ChangeGroupNameScreen         ScreenType = ScreenType(14)
+	AddUserIntoGroupScreen        ScreenType = ScreenType(15)
+	PickUserScreen                ScreenType = ScreenType(16)
 )

@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/mkrtychanr/rag_bot/internal/logger"
 	"github.com/mkrtychanr/rag_bot/internal/screen"
@@ -12,9 +13,13 @@ import (
 	deletedocumentfromgroupscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/documents/delete_document_from_group_screen"
 	deletedocumentscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/documents/delete_document_screen"
 	groupaccessscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/groups/group_access_screen"
+	groupadduserscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/groups/group_add_user_screen"
+	groupchangenamescreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/groups/group_change_name_screen"
+	groupcreatescreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/groups/group_create_screen"
 	groupdocumentsscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/groups/group_documents_screen"
 	groupusersscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/groups/group_users_screen"
 	pickgroupscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/groups/pick_group_screen"
+	pickuserscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/groups/pick_user_screen"
 	mainmenu "github.com/mkrtychanr/rag_bot/internal/screen/blocks/main_menu"
 	requestscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/request_screen"
 	postselectormenu "github.com/mkrtychanr/rag_bot/internal/screen/post_selector_menu"
@@ -22,7 +27,11 @@ import (
 	deletedocument "github.com/mkrtychanr/rag_bot/internal/usecase/documents/delete_document"
 	getdocuments "github.com/mkrtychanr/rag_bot/internal/usecase/documents/get_documents"
 	groupaccess "github.com/mkrtychanr/rag_bot/internal/usecase/groups/group_access"
+	groupchange "github.com/mkrtychanr/rag_bot/internal/usecase/groups/group_change"
+	groupcreate "github.com/mkrtychanr/rag_bot/internal/usecase/groups/group_create"
+	groupdelete "github.com/mkrtychanr/rag_bot/internal/usecase/groups/group_delete"
 	groupinfo "github.com/mkrtychanr/rag_bot/internal/usecase/groups/group_info"
+	pickgroupchange "github.com/mkrtychanr/rag_bot/internal/usecase/groups/group_pick/pick_group_change"
 	pickinfogroup "github.com/mkrtychanr/rag_bot/internal/usecase/groups/group_pick/pick_info_group"
 )
 
@@ -215,7 +224,125 @@ func (a *app) newTree() screen.Screen {
 
 	pickGroupForInfoScreen.NextScreens = []screen.Screen{postPickGroupForInfoScreen}
 
-	myGroupsScreen.NextScreens = []screen.Screen{pickGroupForInfoScreen}
+	groupCreateUseCase := groupcreate.NewUseCase(a.container.Repository)
+
+	createGroupScreen := groupcreatescreen.NewCreateGroupScreen(
+		groupCreateUseCase,
+		base.Base{
+			HeadScreen:     mainScreen,
+			PreviousScreen: myGroupsScreen,
+		},
+	)
+
+	pickGroupForChangeScreen := pickgroupscreen.NewPickGroupScreen(
+		pickgroupchange.NewUseCase(a.container.Repository),
+		nil,
+		base.Base{
+			Title:          "Изменить группу",
+			Text:           "Изменить группу",
+			HeadScreen:     mainScreen,
+			PreviousScreen: myGroupsScreen,
+		},
+	)
+
+	postPickGroupForChangeScreen := &postselectormenu.PostSelectorMenu{
+		Base: base.Base{
+			HeadScreen:     mainScreen,
+			PreviousScreen: pickGroupForChangeScreen,
+		},
+		Text: "Изменить группу",
+	}
+
+	changeGroupUseCase := groupchange.NewUseCase(a.container.Repository)
+
+	changeGroupNameScreen := groupchangenamescreen.NewChangeGroupNameScreen(
+		changeGroupUseCase,
+		base.Base{
+			HeadScreen:     mainScreen,
+			PreviousScreen: postPickGroupForChangeScreen,
+		},
+	)
+
+	addUserIntoGroupScreen := groupadduserscreen.NewAddUserIntoGroupScreen(
+		changeGroupUseCase,
+		base.Base{
+			HeadScreen:     mainScreen,
+			PreviousScreen: postPickGroupForChangeScreen,
+		},
+	)
+
+	upRightsPolicyScreen := pickuserscreen.NewPickUserScreen(
+		changeGroupUseCase.GetUsersWithReadOnlyRightPolicy,
+		changeGroupUseCase.SetReadWriteRightsForUserInGroup,
+		base.Base{
+			Title:          "Повысить права",
+			Text:           "Повысить права",
+			HeadScreen:     mainScreen,
+			PreviousScreen: postPickGroupForChangeScreen,
+		},
+	)
+
+	upRightsPolicyScreen.NextScreens = []screen.Screen{upRightsPolicyScreen}
+
+	downRigthsPolicyScreen := pickuserscreen.NewPickUserScreen(
+		changeGroupUseCase.GetUsersWithReadWriteRightPolicy,
+		changeGroupUseCase.SetReadOnlyRightsForUserInGroup,
+		base.Base{
+			Title:          "Понизить права",
+			Text:           "Понизить права",
+			HeadScreen:     mainScreen,
+			PreviousScreen: postPickGroupForChangeScreen,
+		},
+	)
+
+	downRigthsPolicyScreen.NextScreens = []screen.Screen{downRigthsPolicyScreen}
+
+	deleteUserFromGroupScreen := pickuserscreen.NewPickUserScreen(
+		changeGroupUseCase.GetGroupUsersToDelete,
+		changeGroupUseCase.DeleteUserFromGroup,
+		base.Base{
+			Title:          "Удалить из группы",
+			Text:           "Удалить из группы",
+			HeadScreen:     mainScreen,
+			PreviousScreen: postPickGroupForChangeScreen,
+		},
+	)
+
+	deleteUserFromGroupScreen.NextScreens = []screen.Screen{deleteUserFromGroupScreen}
+
+	postPickGroupForChangeScreen.NextScreens = []screen.Screen{changeGroupNameScreen, addUserIntoGroupScreen, upRightsPolicyScreen, downRigthsPolicyScreen, deleteUserFromGroupScreen}
+
+	pickGroupForChangeScreen.NextScreens = []screen.Screen{postPickGroupForChangeScreen}
+
+	deleteGroupUseCase := groupdelete.NewUseCase(a.container.Repository)
+
+	f := func(ctx context.Context, payload map[string]any) error {
+		groupID, ok := payload["group_id"].(int64)
+		if !ok {
+			return screen.ErrWrongType
+		}
+
+		if err := deleteGroupUseCase.DeleteGroup(ctx, groupID); err != nil {
+			return fmt.Errorf("failed to delete group: %w", err)
+		}
+
+		return nil
+	}
+
+	pickGroupForDelete := pickgroupscreen.NewPickGroupScreen(
+		pickgroupchange.NewUseCase(a.container.Repository),
+		f,
+		base.Base{
+			Title:          "Удалить группу",
+			Text:           "Удалить группу",
+			HeadScreen:     mainScreen,
+			PreviousScreen: myGroupsScreen,
+		},
+	)
+
+	pickGroupForDelete.NextScreens = []screen.Screen{pickGroupForDelete}
+
+	myGroupsScreen.NextScreens = []screen.Screen{pickGroupForInfoScreen, createGroupScreen, pickGroupForChangeScreen, pickGroupForDelete}
 
 	groupsScreen.NextScreens = []screen.Screen{accessGroupsScreen, myGroupsScreen}
 

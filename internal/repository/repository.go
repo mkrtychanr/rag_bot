@@ -139,12 +139,7 @@ func (r *Repository) SetReadWriteRightsForUserInGroup(ctx context.Context, group
 	return nil
 }
 
-func (r *Repository) updateUserRightsPolicy(ctx context.Context, groupID int64, tgID int64, rightsPolicy model.RightsPolicy) error {
-	userID, err := r.GetUserIDByTelegramID(ctx, tgID)
-	if err != nil {
-		return fmt.Errorf("failed to get user id by telegram id: %w", err)
-	}
-
+func (r *Repository) updateUserRightsPolicy(ctx context.Context, groupID int64, userID int64, rightsPolicy model.RightsPolicy) error {
 	tx, err := r.storage.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -250,13 +245,13 @@ func (r *Repository) DeletePapers(ctx context.Context, papersIDs []int64) error 
 		}
 	}()
 
-	if _, err := tx.Exec(ctx, deletePapersFromPaperGroupQuery, Int64SliceToString(papersIDs)); err != nil {
+	if _, err := tx.Exec(ctx, deletePapersFromPaperGroupQuery, papersIDs); err != nil {
 		rollback = true
 
 		return fmt.Errorf("failed to delete papers from paper group: %w", err)
 	}
 
-	if _, err := tx.Exec(ctx, deletePapersFromPapersQuery, Int64SliceToString(papersIDs)); err != nil {
+	if _, err := tx.Exec(ctx, deletePapersFromPapersQuery, papersIDs); err != nil {
 		rollback = true
 
 		return fmt.Errorf("failed to delete papers from papers: %w", err)
@@ -287,19 +282,19 @@ func (r *Repository) DeleteGroups(ctx context.Context, groupIDs []int64) error {
 		}
 	}()
 
-	if _, err := tx.Exec(ctx, deleteGroupsFromGroupUserQuery, Int64SliceToString(groupIDs)); err != nil {
+	if _, err := tx.Exec(ctx, deleteGroupsFromGroupUserQuery, groupIDs); err != nil {
 		rollback = true
 
 		return fmt.Errorf("failed to delete groups from group user: %w", err)
 	}
 
-	if _, err := tx.Exec(ctx, deleteGroupsFromPaperGroupQuery, Int64SliceToString(groupIDs)); err != nil {
+	if _, err := tx.Exec(ctx, deleteGroupsFromPaperGroupQuery, groupIDs); err != nil {
 		rollback = true
 
 		return fmt.Errorf("failed to delete groups from paper group: %w", err)
 	}
 
-	if _, err := tx.Exec(ctx, deleteGroupsFromGroupsQuery, Int64SliceToString(groupIDs)); err != nil {
+	if _, err := tx.Exec(ctx, deleteGroupsFromGroupsQuery, groupIDs); err != nil {
 		rollback = true
 
 		return fmt.Errorf("failed to delete groups from groups: %w", err)
@@ -369,7 +364,10 @@ func (r *Repository) GetUserRWGroupIDs(ctx context.Context, tgID int64) ([]int64
 }
 
 func (r *Repository) FetchGroupsInfo(ctx context.Context, groupIDs []int64) ([]model.Group, error) {
-	rows, err := r.storage.Query(ctx, getGroupsInfoQuery, Int64SliceToString(groupIDs))
+	if len(groupIDs) == 0 {
+		return nil, nil
+	}
+	rows, err := r.storage.Query(ctx, getGroupsInfoQuery, groupIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute get groups info query: %w", err)
 	}
@@ -539,7 +537,7 @@ func (r *Repository) GetGroupPapers(ctx context.Context, groupID int64) ([]int64
 }
 
 func (r *Repository) FetchPapersInfo(ctx context.Context, paperIDs []int64) ([]model.Paper, error) {
-	rows, err := r.storage.Query(ctx, getPapersInfoQuery, Int64SliceToString(paperIDs))
+	rows, err := r.storage.Query(ctx, getPapersInfoQuery, paperIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute get papers info query: %w", err)
 	}
@@ -618,7 +616,7 @@ func (r *Repository) GetGroupUsers(ctx context.Context, groupID int64) ([]model.
 }
 
 func (r *Repository) FetchUsersInfo(ctx context.Context, userIDs []int64) ([]model.User, error) {
-	rows, err := r.storage.Query(ctx, getUsersInfoQuery, Int64SliceToString(userIDs))
+	rows, err := r.storage.Query(ctx, getUsersInfoQuery, userIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute get users info query: %w", err)
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mkrtychanr/rag_bot/internal/model"
+	"github.com/mkrtychanr/rag_bot/internal/utils"
 )
 
 type useCase struct {
@@ -33,10 +34,15 @@ func (u *useCase) GetGroups(ctx context.Context, tgID int64) ([]model.Group, err
 		return nil, fmt.Errorf("failed to get user groups ownership: %w", err)
 	}
 
-	result := make([]model.Group, 0, len(accessGroups)+len(ownedGroups))
+	m := make(map[int64]model.Group, len(accessGroups)+len(ownedGroups))
 
-	result = append(result, accessGroups...)
-	result = append(result, ownedGroups...)
+	for _, group := range accessGroups {
+		m[group.ID] = group
+	}
 
-	return result, nil
+	for _, group := range ownedGroups {
+		m[group.ID] = group
+	}
+
+	return utils.MapValuesToSlice(m), nil
 }

@@ -10,13 +10,15 @@ import (
 	endtoend "github.com/mkrtychanr/rag_bot/internal/screen/selector/end_to_end"
 )
 
+type performerFunc = func(context.Context, map[string]any) error
+
 type PickGroupScreen struct {
 	endtoend.End2EndSelector
 	getter    getter
-	performer performer
+	performer performerFunc
 }
 
-func NewPickGroupScreen(g getter, p performer, base baseScreen.Base) *PickGroupScreen {
+func NewPickGroupScreen(g getter, p performerFunc, base baseScreen.Base) *PickGroupScreen {
 	obj := &PickGroupScreen{
 		getter:    g,
 		performer: p,
@@ -27,7 +29,7 @@ func NewPickGroupScreen(g getter, p performer, base baseScreen.Base) *PickGroupS
 	selector := *endtoend.NewE2ESelector(s)
 
 	if p != nil {
-		selector = *endtoend.NewEndlessSelector(s, p.Perform)
+		selector = *endtoend.NewEndlessSelector(s, p)
 	}
 
 	obj.End2EndSelector = selector

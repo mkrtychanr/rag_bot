@@ -39,6 +39,10 @@ func NewActionController() *actionController {
 			screen.PickGroupScreen:               pickGroupScreenController,
 			screen.GroupDocumentsScreen:          defaultScreenController,
 			screen.GroupUsersScreen:              defaultScreenController,
+			screen.CreateGroupScreen:             textInputScreenController,
+			screen.ChangeGroupNameScreen:         textInputScreenController,
+			screen.AddUserIntoGroupScreen:        textInputScreenController,
+			screen.PickUserScreen:                pickUserScreenController,
 		},
 	}
 }
@@ -268,6 +272,59 @@ func pickGroupScreenController(ctx context.Context, sc screen.Screen, payload mo
 		}
 
 		return sc, nil
+	}
+
+	return nil, ErrCorruptedData
+}
+
+func pickUserScreenController(ctx context.Context, sc screen.Screen, payload model.OperatorData) (screen.Screen, error) {
+	if payload.CallbackData != nil {
+		var v lightWeightOption
+		if err := json.Unmarshal(payload.CallbackData, &v); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal payload: %w", err)
+		}
+
+		var op selectorscreen.SelectorOption
+
+		if v.Option < 0 {
+			op.Option = v.Option
+		} else {
+			if err := json.Unmarshal(payload.CallbackData, &op); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal payload: %w", err)
+			}
+		}
+
+		m := sc.ExtractPayload()
+		m["selector_option"] = op
+		m["action_user_id"] = op.Payload.ID
+
+		sc, err := sc.Perform(ctx, m)
+		if err != nil {
+			return nil, fmt.Errorf("failed to perform screen: %w", err)
+		}
+
+		return sc, nil
+	}
+
+	return nil, ErrCorruptedData
+}
+
+func textInputScreenController(ctx context.Context, sc screen.Screen, payload model.OperatorData) (screen.Screen, error) {
+	if payload.Text != nil {
+		m := sc.ExtractPayload()
+
+		m["text"] = *payload.Text
+
+		sc, err := sc.Perform(ctx, m)
+		if err != nil {
+			return nil, fmt.Errorf("failed to perform screen: %w", err)
+		}
+
+		return sc, nil
+	}
+
+	if payload.CallbackData != nil {
+		return defaultScreenController(ctx, sc, payload)
 	}
 
 	return nil, ErrCorruptedData

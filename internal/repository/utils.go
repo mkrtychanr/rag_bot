@@ -1,22 +1,11 @@
 package repository
 
-import (
-	"strconv"
-	"strings"
-)
+func Int64SliceToPGXArray(data []int64) []interface{} {
+	result := make([]interface{}, 0, len(data))
 
-func Int64SliceToString(data []int64) string {
-	if len(data) == 0 {
-		return ""
+	for _, v := range data {
+		result = append(result, v)
 	}
 
-	b := strings.Builder{}
-
-	b.WriteString(strconv.Itoa(int(data[0])))
-
-	for i := 1; i < len(data); i++ {
-		b.WriteString(", " + strconv.Itoa(int(data[i])))
-	}
-
-	return b.String()
+	return result
 }

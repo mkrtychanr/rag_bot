@@ -15,4 +15,6 @@ type repository interface {
 	GetUserIDsInGroupWithReadOnlyAccess(ctx context.Context, groupID int64) ([]int64, error)
 	GetUserIDsInGroupWithReadWriteAccess(ctx context.Context, groupID int64) ([]int64, error)
 	FetchUsersInfo(ctx context.Context, userIDs []int64) ([]model.User, error)
+	GetUserByShortname(ctx context.Context, shortname string) (model.User, error)
+	GetGroupUsers(ctx context.Context, groupID int64) ([]model.UserGroup, error)
 }
