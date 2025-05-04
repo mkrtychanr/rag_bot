@@ -1,23 +1,24 @@
 package tgapi
 
 import (
+	"context"
 	"fmt"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/mkrtychanr/rag_bot/internal/model"
 )
 
-type tgAPI struct {
+type TgAPI struct {
 	gateway *tgbotapi.BotAPI
 }
 
-func NewTgAPI(api *tgbotapi.BotAPI) *tgAPI {
-	return &tgAPI{
+func NewTgAPI(api *tgbotapi.BotAPI) *TgAPI {
+	return &TgAPI{
 		gateway: api,
 	}
 }
 
-func (api *tgAPI) SendScreen(chatID int64, screen model.Screen) (int64, error) {
+func (api *TgAPI) SendScreen(_ context.Context, chatID int64, screen model.Screen) (int64, error) {
 	msg := tgbotapi.NewMessage(chatID, screen.Text)
 
 	rows := make([][]tgbotapi.InlineKeyboardButton, 0, len(screen.Buttons))
@@ -44,7 +45,7 @@ func (api *tgAPI) SendScreen(chatID int64, screen model.Screen) (int64, error) {
 	return int64(m.MessageID), nil
 }
 
-func (api *tgAPI) DeleteMessage(chatID int64, messageID int64) error {
+func (api *TgAPI) DeleteMessage(_ context.Context, chatID int64, messageID int64) error {
 	deleteMsg := tgbotapi.NewDeleteMessage(chatID, int(messageID))
 
 	if _, err := api.gateway.Request(deleteMsg); err != nil {
@@ -54,7 +55,7 @@ func (api *tgAPI) DeleteMessage(chatID int64, messageID int64) error {
 	return nil
 }
 
-func (api *tgAPI) SendText(chatID int64, text string) error {
+func (api *TgAPI) SendText(_ context.Context, chatID int64, text string) error {
 	if _, err := api.gateway.Send(tgbotapi.NewMessage(chatID, text)); err != nil {
 		return fmt.Errorf("failed to send: %w", err)
 	}
@@ -62,7 +63,7 @@ func (api *tgAPI) SendText(chatID int64, text string) error {
 	return nil
 }
 
-func (api *tgAPI) GetUserShortname(tgID int64) (string, error) {
+func (api *TgAPI) GetUserShortname(_ context.Context, tgID int64) (string, error) {
 	result, err := api.gateway.GetChat(tgbotapi.ChatInfoConfig{
 		ChatConfig: tgbotapi.ChatConfig{
 			ChatID: tgID,

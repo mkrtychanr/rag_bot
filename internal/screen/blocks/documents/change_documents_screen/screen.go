@@ -30,7 +30,7 @@ func NewChangeDocumentsScreen(g getter, base baseScreen.Base) *ChangeDocumentsSc
 }
 
 func (s *ChangeDocumentsScreen) GetScreenType() screen.ScreenType {
-	return screen.E2ESelectorScreen
+	return screen.ChangeDocumentsScreen
 }
 
 func (s *ChangeDocumentsScreen) wrapper(ctx context.Context, id int64) ([]selectorscreen.SelectorData, error) {

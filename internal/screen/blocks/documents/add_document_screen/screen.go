@@ -39,16 +39,18 @@ func (s *AddDocumentScreen) GetTitle() string {
 	return "Загрузить документ"
 }
 
-func (s *AddDocumentScreen) Load(_ context.Context, _ any) error {
+func (s *AddDocumentScreen) Load(_ context.Context, payload map[string]any) error {
+	s.CurrentPayload = payload
+
 	return nil
 }
 
-func (s *AddDocumentScreen) Perform(ctx context.Context, payload any) (screen.Screen, error) {
+func (s *AddDocumentScreen) Perform(ctx context.Context, payload map[string]any) (screen.Screen, error) {
 	if payload == nil {
 		return nil, screen.ErrEmptyPayload
 	}
 
-	v, ok := payload.(PerformModel)
+	v, ok := payload["perform"].(PerformModel)
 	if !ok {
 		return nil, screen.ErrWrongType
 	}

@@ -26,5 +26,9 @@ const (
 	getUserByShortnameQuery              = "select id, name, tg_id from users where name = $1"
 	changeGroupNameQuery                 = "update groups set name = $2 where id = $1"
 	getUserIDsWithAccessTypeInGroupQuery = "select user_id from group_user where group_id = $1 access_type_id = $2"
-	upsertMessage                        = `insert into messages (chat_id, user_id, message_id) VALUES ($1, $2, $3) on conflict (chat_id) do update set chat_id = $1, user_id = $2, message_id = $3`
+	upsertMessageQuery                   = "insert into messages (chat_id, user_id, message_id) VALUES ($1, $2, $3) on conflict (chat_id) do update set chat_id = $1, user_id = $2, message_id = $3"
+	getMessageIDQuery                    = "select message_id from messages where chat_id = $1"
+	deleteMessageQuery                   = "delete from messages where chat_id = $1"
+	getUserGroupIDsWithAccessTypeQuery   = "select group_id from group_user where user_id = $1 and access_type_id = $2"
+	getPaperGroupIDsQuery                = "select group_id from paper_group where paper_id = $1"
 )

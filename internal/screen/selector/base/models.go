@@ -1,5 +1,6 @@
 package selectorscreen
 
-type LoadModel struct {
-	ID int64 `json:"id"`
+type SelectorOption struct {
+	Option  int          `json:"option"`
+	Payload SelectorData `json:"payload"`
 }

@@ -6,5 +6,5 @@ type OperatorData struct {
 	MessageID    int64
 	Text         *string
 	CallbackData []byte
-	DocumentID   string
+	DocumentID   *string
 }

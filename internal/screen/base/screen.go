@@ -7,46 +7,45 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/mkrtychanr/rag_bot/internal/model"
 	"github.com/mkrtychanr/rag_bot/internal/screen"
+	"github.com/mkrtychanr/rag_bot/internal/utils"
 )
 
 type Base struct {
-	self           screen.Screen
 	Text           string
 	Title          string
 	NextScreens    []screen.Screen
-	CurrentPayload []byte
+	CurrentPayload map[string]any
 	HeadScreen     screen.Screen `json:"-"`
 	PreviousScreen screen.Screen `json:"-"`
 }
 
-func (s *Base) Next(ctx context.Context, payload model.MenuOption) (screen.Screen, error) {
-	if payload.Option == -2 {
-		if s.HeadScreen == nil {
-			return s.self, nil
-		}
+func (s *Base) Next(ctx context.Context, payload map[string]any) (screen.Screen, error) {
+	option, ok := payload["option"].(model.MenuOption)
+	if !ok {
+		return nil, screen.ErrWrongType
+	}
+
+	if option.Option == -2 {
 
 		return s.HeadScreen, nil
 	}
 
-	if payload.Option == -1 {
+	if option.Option == -1 {
 		prev := s.PreviousScreen
-		if prev == nil {
-			return s.self, nil
-		}
 
-		if err := prev.Load(ctx, nil); err != nil {
+		if err := prev.Load(ctx, s.ExtractPayload()); err != nil {
 			return nil, fmt.Errorf("failed to load previous screen: %w", err)
 		}
 
 		return prev, nil
 	}
 
-	if payload.Option >= int64(len(s.NextScreens)) {
+	if option.Option >= int64(len(s.NextScreens)) {
 		return nil, screen.ErrUnknownScreen
 	}
 
-	next := s.NextScreens[payload.Option]
-	if err := next.Load(ctx, payload.Payload); err != nil {
+	next := s.NextScreens[option.Option]
+	if err := next.Load(ctx, payload); err != nil {
 		return nil, fmt.Errorf("failed to load next screen: %w", err)
 	}
 
@@ -95,7 +94,7 @@ func (s *Base) BuildBaseButtons() ([][]model.Button, error) {
 	return buttons, nil
 }
 
-func (s *Base) Render() (model.Screen, error) {
+func (s *Base) BuildNextScreensButtons() ([][]model.Button, error) {
 	buttons := make([][]model.Button, 0, len(s.NextScreens))
 
 	for i, screen := range s.NextScreens {
@@ -109,7 +108,7 @@ func (s *Base) Render() (model.Screen, error) {
 
 		payload, err := json.Marshal(op)
 		if err != nil {
-			return model.Screen{}, fmt.Errorf("failed to marshal menu option: %w", err)
+			return nil, fmt.Errorf("failed to marshal menu option: %w", err)
 		}
 
 		button.Payload = payload
@@ -117,12 +116,21 @@ func (s *Base) Render() (model.Screen, error) {
 		buttons = append(buttons, []model.Button{button})
 	}
 
+	return buttons, nil
+}
+
+func (s *Base) Render() (model.Screen, error) {
+	nextScreensButtons, err := s.BuildNextScreensButtons()
+	if err != nil {
+		return model.Screen{}, fmt.Errorf("failed to build next screens buttons: %w", err)
+	}
+
 	baseButtons, err := s.BuildBaseButtons()
 	if err != nil {
 		return model.Screen{}, fmt.Errorf("failed to build base buttons: %w", err)
 	}
 
-	buttons = append(buttons, baseButtons...)
+	buttons := append(nextScreensButtons, baseButtons...)
 
 	return model.Screen{
 		Text:    s.Text,
@@ -132,4 +140,8 @@ func (s *Base) Render() (model.Screen, error) {
 
 func (s *Base) GetTitle() string {
 	return s.Title
+}
+
+func (s *Base) ExtractPayload() map[string]any {
+	return utils.Copy(s.CurrentPayload)
 }

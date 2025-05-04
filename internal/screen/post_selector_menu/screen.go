@@ -1,12 +1,13 @@
 package postselectormenu
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
 
 	"github.com/mkrtychanr/rag_bot/internal/model"
 	"github.com/mkrtychanr/rag_bot/internal/screen"
 	baseScreen "github.com/mkrtychanr/rag_bot/internal/screen/base"
+	baseSelector "github.com/mkrtychanr/rag_bot/internal/screen/selector/base"
 )
 
 type PostSelectorMenu struct {
@@ -14,29 +15,37 @@ type PostSelectorMenu struct {
 	Text string
 }
 
-func (s *PostSelectorMenu) Load(payload []byte) error {
+func (s *PostSelectorMenu) Load(_ context.Context, payload map[string]any) error {
+	s.CurrentPayload = payload
 	if payload == nil {
 		return screen.ErrEmptyPayload
 	}
 
-	var v LoadModel
-	if err := json.Unmarshal(payload, &v); err != nil {
-		return fmt.Errorf("failed to unmarshal payload: %w", err)
+	v, ok := payload["selector_option"].(baseSelector.SelectorOption)
+	if !ok {
+		return screen.ErrWrongType
 	}
 
-	s.Text = v.Text
+	s.Text = v.Payload.Text
 
 	return nil
 }
 
 func (s *PostSelectorMenu) Render() (model.Screen, error) {
-	buttons, err := s.BuildBaseButtons()
+	bs, err := s.Base.Render()
 	if err != nil {
-		return model.Screen{}, fmt.Errorf("failed to build base buttons: %w", err)
+		return model.Screen{}, fmt.Errorf("failed to render base: %w", err)
 	}
 
-	return model.Screen{
-		Text:    "Выберите действие над " + s.Text,
-		Buttons: buttons,
-	}, nil
+	bs.Text = "Выберите действие над " + s.Text
+
+	return bs, nil
+}
+
+func (s *PostSelectorMenu) Perform(_ context.Context, _ map[string]any) (screen.Screen, error) {
+	return nil, nil
+}
+
+func (s *PostSelectorMenu) GetScreenType() screen.ScreenType {
+	return screen.PostE2ESelectorScreen
 }

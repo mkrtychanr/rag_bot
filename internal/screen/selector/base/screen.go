@@ -33,17 +33,19 @@ func NewSelector(f func(context.Context, int64) ([]SelectorData, error), base ba
 	}
 }
 
-func (s *Selector) Load(ctx context.Context, payload any) error {
+func (s *Selector) Load(ctx context.Context, payload map[string]any) error {
 	if payload == nil {
 		return screen.ErrEmptyPayload
 	}
 
-	v, ok := payload.(LoadModel)
+	s.CurrentPayload = payload
+
+	v, ok := payload["user_id"].(int64)
 	if !ok {
 		return screen.ErrWrongType
 	}
 
-	data, err := s.GetSelectorData(ctx, v.ID)
+	data, err := s.GetSelectorData(ctx, v)
 	if err != nil {
 		return fmt.Errorf("failed to get selector data: %w", err)
 	}
@@ -57,9 +59,14 @@ func (s *Selector) buildButtons() ([][]model.Button, error) {
 	m := utils.NewMatrix[model.Button](buttonsInARow)
 
 	for i := 0; i < len(s.data); i++ {
-		b, err := json.Marshal(s.data[i])
+		op := SelectorOption{
+			Option:  i,
+			Payload: s.data[i],
+		}
+
+		b, err := json.Marshal(op)
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal selector data: %w", err)
+			return nil, fmt.Errorf("failed to marshal option data: %w", err)
 		}
 
 		button := model.Button{
@@ -85,12 +92,12 @@ func (s *Selector) buildButtons() ([][]model.Button, error) {
 func (s *Selector) buildText() (string, error) {
 	b := strings.Builder{}
 
-	if _, err := b.WriteString("Выберите вариант из списка:"); err != nil {
+	if _, err := b.WriteString("Выберите вариант из списка:\n"); err != nil {
 		return "", fmt.Errorf("failed to write header string: %w", err)
 	}
 
 	for i, v := range s.data {
-		if _, err := b.WriteString(fmt.Sprintf("%d – %s", i+1, v.Text)); err != nil {
+		if _, err := b.WriteString(fmt.Sprintf("%d – %s\n", i+1, v.Text)); err != nil {
 			return "", fmt.Errorf("failed to write block string: %w", err)
 		}
 	}

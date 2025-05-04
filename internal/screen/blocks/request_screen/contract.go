@@ -7,5 +7,5 @@ type requestMaker interface {
 }
 
 type sender interface {
-	Send(ctx context.Context, userID int64, message string) error
+	SendText(ctx context.Context, userID int64, message string) error
 }

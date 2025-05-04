@@ -6,20 +6,22 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	actioncontroller "github.com/mkrtychanr/rag_bot/internal/action_controller"
+	"github.com/mkrtychanr/rag_bot/internal/app/container"
 	"github.com/mkrtychanr/rag_bot/internal/bot"
 	"github.com/mkrtychanr/rag_bot/internal/config"
 	tgapi "github.com/mkrtychanr/rag_bot/internal/gateway/tg_api"
 	"github.com/mkrtychanr/rag_bot/internal/repository"
-	"github.com/mkrtychanr/rag_bot/internal/screen"
 	smoothoperator "github.com/mkrtychanr/rag_bot/internal/smooth_operator"
 	screenchanger "github.com/mkrtychanr/rag_bot/internal/usecase/screen_changer"
 	"golang.org/x/sync/errgroup"
 )
 
 type app struct {
-	config config.Config
-	api    *tgbotapi.BotAPI
-	conn   *pgxpool.Pool
+	config    config.Config
+	api       *tgbotapi.BotAPI
+	conn      *pgxpool.Pool
+	container container.Container
 }
 
 func NewApp(ctx context.Context, cfg config.Config) (*app, error) {
@@ -37,30 +39,33 @@ func NewApp(ctx context.Context, cfg config.Config) (*app, error) {
 		return nil, fmt.Errorf("failed to ping: %w", err)
 	}
 
+	repo := repository.NewRepository(conn)
+
+	tgGateway := tgapi.NewTgAPI(api)
+
+	c := container.Container{
+		Repository: repo,
+		TgGateway:  tgGateway,
+	}
+
 	return &app{
-		config: cfg,
-		api:    api,
-		conn:   conn,
+		config:    cfg,
+		api:       api,
+		conn:      conn,
+		container: c,
 	}, nil
 }
 
-func newTree() screen.Screen {
-	return nil
-}
-
 func (a *app) Run(ctx context.Context) error {
-	repo := repository.NewRepository(a.conn)
-
-	tgGateway := tgapi.NewTgAPI(a.api)
-
-	screenChangerUseCase := screenchanger.NewUseCase(tgGateway, repo)
+	screenChangerUseCase := screenchanger.NewUseCase(a.container.TgGateway, a.container.Repository)
+	ac := actioncontroller.NewActionController()
 
 	reciver, err := bot.NewBot(a.api, a.config.Bot)
 	if err != nil {
 		return fmt.Errorf("failed to create reciver: %w", err)
 	}
 
-	operator := smoothoperator.NewOperator(screenChangerUseCase, newTree)
+	operator := smoothoperator.NewOperator(screenChangerUseCase, ac, a.newTree)
 
 	ch := make(chan tgbotapi.Update, 20)
 

@@ -24,11 +24,12 @@ type operator struct {
 	actionController actionController
 }
 
-func NewOperator(sc screenChanger, f func() screen.Screen) *operator {
+func NewOperator(sc screenChanger, ac actionController, f func() screen.Screen) *operator {
 	return &operator{
 		screenChanger:    sc,
 		getDefaultScreen: f,
 		chats:            make(map[int64]screen.Screen),
+		actionController: ac,
 	}
 }
 
@@ -104,6 +105,10 @@ func (o *operator) handleStartCommand(ctx context.Context, chatID int64, tgID in
 		return fmt.Errorf("failed render new screen: %w", err)
 	}
 
+	if err := o.screenChanger.Clear(ctx, chatID); err != nil {
+		return fmt.Errorf("failed to clear: %w", err)
+	}
+
 	if err := o.screenChanger.ChangeScreen(ctx, chatID, tgID, toChange); err != nil {
 		return fmt.Errorf("failed to change screen: %w", err)
 	}
@@ -132,7 +137,7 @@ func getOperatorData(update tgbotapi.Update) model.OperatorData {
 		}
 
 		if update.Message.Document != nil {
-			res.DocumentID = update.Message.Document.FileID
+			res.DocumentID = &update.Message.Document.FileID
 		}
 	}
 

@@ -29,3 +29,13 @@ func SliceToMap[K comparable](d []K) map[K]struct{} {
 
 	return r
 }
+
+func Copy[K comparable, V any](m map[K]V) map[K]V {
+	newM := make(map[K]V, len(m))
+
+	for k, v := range m {
+		newM[k] = v
+	}
+
+	return newM
+}

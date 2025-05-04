@@ -9,6 +9,7 @@ import (
 
 type screenChanger interface {
 	ChangeScreen(ctx context.Context, chatID int64, tgID int64, newScreen model.Screen) error
+	Clear(ctx context.Context, chatID int64) error
 }
 
 type controllerFunc = func(ctx context.Context, screen screen.Screen, data model.OperatorData) (screen.Screen, error)

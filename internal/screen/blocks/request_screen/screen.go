@@ -41,16 +41,16 @@ func (s *RequestScreen) GetTitle() string {
 	return "Сделать запрос"
 }
 
-func (s *RequestScreen) Load(ctx context.Context, payload any) error {
+func (s *RequestScreen) Load(ctx context.Context, payload map[string]any) error {
 	return nil
 }
 
-func (s *RequestScreen) Perform(ctx context.Context, payload any) (screen.Screen, error) {
+func (s *RequestScreen) Perform(ctx context.Context, payload map[string]any) (screen.Screen, error) {
 	if payload == nil {
 		return nil, screen.ErrEmptyPayload
 	}
 
-	v, ok := payload.(PerformModel)
+	v, ok := payload["perform"].(PerformModel)
 	if !ok {
 		return nil, screen.ErrWrongType
 	}
@@ -60,7 +60,7 @@ func (s *RequestScreen) Perform(ctx context.Context, payload any) (screen.Screen
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
 
-	if err := s.sender.Send(ctx, v.UserID, result); err != nil {
+	if err := s.sender.SendText(ctx, v.UserID, result); err != nil {
 		return nil, fmt.Errorf("failed to send message: %w", err)
 	}
 

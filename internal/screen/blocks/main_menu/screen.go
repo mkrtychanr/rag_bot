@@ -13,11 +13,11 @@ type DefaultMenuScreen struct {
 	baseScreen.Base
 }
 
-func (s *DefaultMenuScreen) Load(_ context.Context, _ any) error {
+func (s *DefaultMenuScreen) Load(_ context.Context, _ map[string]any) error {
 	return nil
 }
 
-func (s *DefaultMenuScreen) Perform(_ context.Context, _ any) (screen.Screen, error) {
+func (s *DefaultMenuScreen) Perform(_ context.Context, _ map[string]any) (screen.Screen, error) {
 	return nil, nil
 }
 
