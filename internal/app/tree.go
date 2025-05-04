@@ -11,6 +11,10 @@ import (
 	changedocumentsscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/documents/change_documents_screen"
 	deletedocumentfromgroupscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/documents/delete_document_from_group_screen"
 	deletedocumentscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/documents/delete_document_screen"
+	groupaccessscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/groups/group_access_screen"
+	groupdocumentsscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/groups/group_documents_screen"
+	groupusersscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/groups/group_users_screen"
+	pickgroupscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/groups/pick_group_screen"
 	mainmenu "github.com/mkrtychanr/rag_bot/internal/screen/blocks/main_menu"
 	requestscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/request_screen"
 	postselectormenu "github.com/mkrtychanr/rag_bot/internal/screen/post_selector_menu"
@@ -18,6 +22,8 @@ import (
 	deletedocument "github.com/mkrtychanr/rag_bot/internal/usecase/documents/delete_document"
 	getdocuments "github.com/mkrtychanr/rag_bot/internal/usecase/documents/get_documents"
 	groupaccess "github.com/mkrtychanr/rag_bot/internal/usecase/groups/group_access"
+	groupinfo "github.com/mkrtychanr/rag_bot/internal/usecase/groups/group_info"
+	pickinfogroup "github.com/mkrtychanr/rag_bot/internal/usecase/groups/group_pick/pick_info_group"
 )
 
 type superObject struct{}
@@ -144,6 +150,74 @@ func (a *app) newTree() screen.Screen {
 	deleteDocumentScreen.NextScreens = []screen.Screen{deleteDocumentScreen}
 
 	myDocumentsScreen.NextScreens = []screen.Screen{addDocumentScreen, changeDocumentsScreen, deleteDocumentScreen}
+
+	accessGroupsScreen := groupaccessscreen.NewGroupAccessScreen(
+		groupAccessUseCase,
+		base.Base{
+			Title:          "В каких я группах",
+			Text:           "В каких я группах",
+			HeadScreen:     mainScreen,
+			PreviousScreen: groupsScreen,
+		},
+	)
+
+	myGroupsScreen := &mainmenu.DefaultMenuScreen{
+		Base: base.Base{
+			Title:          "Мои группы",
+			Text:           "Мои группы",
+			HeadScreen:     mainScreen,
+			PreviousScreen: groupsScreen,
+		},
+	}
+
+	pickGroupForInfoScreen := pickgroupscreen.NewPickGroupScreen(
+		pickinfogroup.NewUseCase(a.container.Repository),
+		nil,
+		base.Base{
+			Title:          "Информация по группе",
+			Text:           "Информация по группе",
+			HeadScreen:     mainScreen,
+			PreviousScreen: myGroupsScreen,
+		},
+	)
+
+	postPickGroupForInfoScreen := &postselectormenu.PostSelectorMenu{
+		Base: base.Base{
+			HeadScreen:     mainScreen,
+			PreviousScreen: pickGroupForInfoScreen,
+		},
+		Text: "Информация о группе",
+	}
+
+	groupInfoUseCase := groupinfo.NewUseCase(a.container.Repository)
+
+	groupDocumentsScreen := groupdocumentsscreen.NewGroupDocumentsScreen(
+		groupInfoUseCase,
+		base.Base{
+			Title:          "Документы группы",
+			Text:           "Документы группы",
+			HeadScreen:     mainScreen,
+			PreviousScreen: postPickGroupForInfoScreen,
+		},
+	)
+
+	groupUsersScreen := groupusersscreen.NewGroupUsersScreen(
+		groupInfoUseCase,
+		base.Base{
+			Title:          "Пользователи группы",
+			Text:           "Пользователи группы",
+			HeadScreen:     mainScreen,
+			PreviousScreen: postPickGroupForInfoScreen,
+		},
+	)
+
+	postPickGroupForInfoScreen.NextScreens = []screen.Screen{groupDocumentsScreen, groupUsersScreen}
+
+	pickGroupForInfoScreen.NextScreens = []screen.Screen{postPickGroupForInfoScreen}
+
+	myGroupsScreen.NextScreens = []screen.Screen{pickGroupForInfoScreen}
+
+	groupsScreen.NextScreens = []screen.Screen{accessGroupsScreen, myGroupsScreen}
 
 	return mainScreen
 }

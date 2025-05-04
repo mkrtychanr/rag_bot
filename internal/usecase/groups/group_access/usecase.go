@@ -60,7 +60,44 @@ func (u *useCase) getUserGroups(ctx context.Context, tgID int64, f getGroupsFunc
 		result = append(result, group)
 	}
 
+	result, err = u.fetchUsersInfoForGroups(ctx, result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch users info for groups: %w", err)
+	}
+
 	return result, nil
+}
+
+func (u *useCase) fetchUsersInfoForGroups(ctx context.Context, groups []model.Group) ([]model.Group, error) {
+	userIDsMap := make(map[int64]struct{}, len(groups))
+
+	for _, group := range groups {
+		userIDsMap[group.Admin.ID] = struct{}{}
+	}
+
+	userIDs := utils.MapKeysToSlice(userIDsMap)
+
+	users, err := u.repository.FetchUsersInfo(ctx, userIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch users: %w", err)
+	}
+
+	usersMap := make(map[int64]model.User, len(users))
+
+	for _, user := range users {
+		usersMap[user.ID] = user
+	}
+
+	for i := range len(groups) {
+		user, ok := usersMap[groups[i].Admin.ID]
+		if !ok {
+			continue
+		}
+
+		groups[i].Admin = user
+	}
+
+	return groups, nil
 }
 
 func (u *useCase) GetGroupsToAddPaper(ctx context.Context, tgID int64, paperID int64) ([]model.Group, error) {

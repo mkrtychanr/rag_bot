@@ -12,4 +12,8 @@ var (
 	ChangeDocumentsScreen         ScreenType = ScreenType(6)
 	DeleteDocumentFromGroupScreen ScreenType = ScreenType(7)
 	DeleteDocumentScreen          ScreenType = ScreenType(8)
+	GroupAccessScreen             ScreenType = ScreenType(9)
+	PickGroupScreen               ScreenType = ScreenType(10)
+	GroupDocumentsScreen          ScreenType = ScreenType(11)
+	GroupUsersScreen              ScreenType = ScreenType(12)
 )

@@ -37,5 +37,20 @@ func (u *useCase) GetGroupUsers(ctx context.Context, groupID int64) ([]model.Use
 		return nil, fmt.Errorf("failed to get group users: %w", err)
 	}
 
+	groupInfo, err := u.repository.FetchGroupsInfo(ctx, []int64{groupID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch groups info: %w", err)
+	}
+
+	owner, err := u.repository.FetchUsersInfo(ctx, []int64{groupInfo[0].Admin.ID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch users info: %w", err)
+	}
+
+	users = append(users, model.UserGroup{
+		User:       owner[0],
+		AccessType: model.Onwer,
+	})
+
 	return users, nil
 }

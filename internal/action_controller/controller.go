@@ -35,6 +35,10 @@ func NewActionController() *actionController {
 			screen.AddDocumentIntoGroupScreen:    addDocumentIntoGroupController,
 			screen.DeleteDocumentFromGroupScreen: addDocumentIntoGroupController,
 			screen.DeleteDocumentScreen:          deleteDocumentScreenController,
+			screen.GroupAccessScreen:             defaultScreenController,
+			screen.PickGroupScreen:               pickGroupScreenController,
+			screen.GroupDocumentsScreen:          defaultScreenController,
+			screen.GroupUsersScreen:              defaultScreenController,
 		},
 	}
 }
@@ -225,6 +229,38 @@ func deleteDocumentScreenController(ctx context.Context, sc screen.Screen, paylo
 		m := sc.ExtractPayload()
 		m["selector_option"] = op
 		m["paper_id"] = op.Payload.ID
+
+		sc, err := sc.Perform(ctx, m)
+		if err != nil {
+			return nil, fmt.Errorf("failed to perform screen: %w", err)
+		}
+
+		return sc, nil
+	}
+
+	return nil, ErrCorruptedData
+}
+
+func pickGroupScreenController(ctx context.Context, sc screen.Screen, payload model.OperatorData) (screen.Screen, error) {
+	if payload.CallbackData != nil {
+		var v lightWeightOption
+		if err := json.Unmarshal(payload.CallbackData, &v); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal payload: %w", err)
+		}
+
+		var op selectorscreen.SelectorOption
+
+		if v.Option < 0 {
+			op.Option = v.Option
+		} else {
+			if err := json.Unmarshal(payload.CallbackData, &op); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal payload: %w", err)
+			}
+		}
+
+		m := sc.ExtractPayload()
+		m["selector_option"] = op
+		m["group_id"] = op.Payload.ID
 
 		sc, err := sc.Perform(ctx, m)
 		if err != nil {

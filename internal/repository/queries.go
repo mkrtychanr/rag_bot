@@ -22,7 +22,7 @@ const (
 	getUserPapersQuery                   = "select id, name from papers where author_id = $1"
 	getGroupPapersQuery                  = "select paper_id from paper_group where group_id = $1"
 	getUserGroupsOwnershipQuery          = "select id, name from groups where admin = $1"
-	getGroupUsersQuery                   = "select user_id, access_type from group_user where group_id = $1"
+	getGroupUsersQuery                   = "select user_id, access_type_id from group_user where group_id = $1"
 	getUserByShortnameQuery              = "select id, name, tg_id from users where name = $1"
 	changeGroupNameQuery                 = "update groups set name = $2 where id = $1"
 	getUserIDsWithAccessTypeInGroupQuery = "select user_id from group_user where group_id = $1 access_type_id = $2"
