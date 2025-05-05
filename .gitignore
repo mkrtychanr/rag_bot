@@ -1,3 +1,5 @@
 docker/database/*
 config/local/*
 .vscode
+*volumes
+*env.py
