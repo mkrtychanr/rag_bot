@@ -70,6 +70,14 @@ services:
       - "etcd"
       - "minio"
 
+  app:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8080:8080"  # Пример проброса порта (внешний:внутренний)
+    restart: unless-stopped
+
 networks:
   default:
     name: milvus
