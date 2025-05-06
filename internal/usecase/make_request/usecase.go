@@ -25,6 +25,15 @@ func (u *useCase) MakeRequest(ctx context.Context, request string, tgID int64) (
 		return "", fmt.Errorf("failed to get user groups: %w", err)
 	}
 
+	ownedGroups, err := u.repository.GetUserGroupsOwnership(ctx, tgID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get user groups ownership: %w", err)
+	}
+
+	for _, group := range ownedGroups {
+		userGroups = append(userGroups, group.ID)
+	}
+
 	papers := make([]int64, 0, len(userGroups))
 
 	for _, group := range userGroups {

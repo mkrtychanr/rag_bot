@@ -3,6 +3,8 @@ package tgapi
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/mkrtychanr/rag_bot/internal/model"
@@ -74,4 +76,20 @@ func (api *TgAPI) GetUserShortname(_ context.Context, tgID int64) (string, error
 	}
 
 	return result.UserName, nil
+}
+
+func (api *TgAPI) GetFile(ctx context.Context, fileID string) (io.ReadCloser, error) {
+	fileMeta, err := api.gateway.GetFile(tgbotapi.FileConfig{
+		FileID: fileID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get file meta: %w", err)
+	}
+
+	resp, err := http.Get(fileMeta.Link(api.gateway.Token))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get file: %w", err)
+	}
+
+	return resp.Body, nil
 }

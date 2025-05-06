@@ -15,6 +15,7 @@ type Config struct {
 	Profile  Profiling `mapstructure:"profiling" yaml:"profiling"`
 	Bot      Bot       `mapstructure:"bot" yaml:"bot"`
 	Postrges Postrges  `mapstructure:"postgres" yaml:"postgres"`
+	Rag      Rag       `mapstructure:"rag" yaml:"rag"`
 }
 
 func (c *Config) Validate() error {

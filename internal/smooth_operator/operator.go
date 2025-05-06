@@ -133,11 +133,15 @@ func getOperatorData(update tgbotapi.Update) model.OperatorData {
 			ChatID:    update.Message.Chat.ID,
 			UserID:    update.Message.From.ID,
 			MessageID: int64(update.Message.MessageID),
-			Text:      &update.Message.Text,
 		}
 
-		if update.Message.Document != nil {
+		if update.Message.Text != "" {
+			res.Text = &update.Message.Text
+		}
+
+		if update.Message.Document != nil && update.Message.Caption != "" {
 			res.DocumentID = &update.Message.Document.FileID
+			res.Text = &update.Message.Caption
 		}
 	}
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mkrtychanr/rag_bot/internal/logger"
+	"github.com/mkrtychanr/rag_bot/internal/gateway/rag"
 	"github.com/mkrtychanr/rag_bot/internal/screen"
 	"github.com/mkrtychanr/rag_bot/internal/screen/base"
 	adddocumentintogroupscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/documents/add_document_into_group_screen"
@@ -23,6 +23,7 @@ import (
 	mainmenu "github.com/mkrtychanr/rag_bot/internal/screen/blocks/main_menu"
 	requestscreen "github.com/mkrtychanr/rag_bot/internal/screen/blocks/request_screen"
 	postselectormenu "github.com/mkrtychanr/rag_bot/internal/screen/post_selector_menu"
+	adddocument "github.com/mkrtychanr/rag_bot/internal/usecase/documents/add_document"
 	changedocument "github.com/mkrtychanr/rag_bot/internal/usecase/documents/change_document"
 	deletedocument "github.com/mkrtychanr/rag_bot/internal/usecase/documents/delete_document"
 	getdocuments "github.com/mkrtychanr/rag_bot/internal/usecase/documents/get_documents"
@@ -33,22 +34,10 @@ import (
 	groupinfo "github.com/mkrtychanr/rag_bot/internal/usecase/groups/group_info"
 	pickgroupchange "github.com/mkrtychanr/rag_bot/internal/usecase/groups/group_pick/pick_group_change"
 	pickinfogroup "github.com/mkrtychanr/rag_bot/internal/usecase/groups/group_pick/pick_info_group"
+	makerequest "github.com/mkrtychanr/rag_bot/internal/usecase/make_request"
 )
 
-type superObject struct{}
-
-func (s *superObject) MakeRequest(ctx context.Context, request string, tgID int64) (string, error) {
-	return "super object make request", nil
-}
-
-func (s *superObject) AddDocument(ctx context.Context, name string, tgID int64, documentTelegramID string) error {
-	logger.GetLogger().Info().Msgf("document %s added", name)
-
-	return nil
-}
-
 func (a *app) newTree() screen.Screen {
-	so := &superObject{}
 	mainScreen := &mainmenu.DefaultMenuScreen{
 		Base: base.Base{
 			Title: "Добро пожаловать",
@@ -56,7 +45,11 @@ func (a *app) newTree() screen.Screen {
 		},
 	}
 
-	requestScreen := requestscreen.NewRequestScreen(so, a.container.TgGateway, base.Base{
+	ragGateway := rag.NewRag(a.config.Rag.Addr)
+
+	llmUseCase := makerequest.NewUseCase(ragGateway, a.container.Repository)
+
+	requestScreen := requestscreen.NewRequestScreen(llmUseCase, a.container.TgGateway, base.Base{
 		Title:          "Сделать запрос",
 		Text:           "Сделать запрос",
 		HeadScreen:     mainScreen,
@@ -83,7 +76,9 @@ func (a *app) newTree() screen.Screen {
 
 	mainScreen.NextScreens = []screen.Screen{requestScreen, myDocumentsScreen, groupsScreen}
 
-	addDocumentScreen := adddocumentscreen.NewAddDocumentScreen(so, base.Base{
+	addDocumentUseCase := adddocument.NewUseCase(a.container.TgGateway, ragGateway, a.container.Repository)
+
+	addDocumentScreen := adddocumentscreen.NewAddDocumentScreen(addDocumentUseCase, base.Base{
 		Title:          "Добавить документ",
 		Text:           "Добавить документ",
 		HeadScreen:     mainScreen,
