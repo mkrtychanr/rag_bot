@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/mkrtychanr/rag_bot/internal/logger"
 	"github.com/mkrtychanr/rag_bot/internal/model"
 	"github.com/mkrtychanr/rag_bot/internal/utils"
@@ -837,6 +838,10 @@ func (r *Repository) ChangeMessage(ctx context.Context, chatID int64, userID int
 func (r *Repository) GetMessageID(ctx context.Context, chatID int64) (int64, error) {
 	rows, err := r.storage.Query(ctx, getMessageIDQuery, chatID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrNoRows
+		}
+
 		return 0, fmt.Errorf("failed to execute get message id query: %w", err)
 	}
 
